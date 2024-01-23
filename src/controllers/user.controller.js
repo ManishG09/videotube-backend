@@ -40,6 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
     const {fullName, email, username, password} = req.body
+    console.log(fullName)
     
 
     if (
@@ -55,11 +56,11 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409, 'User with email or username already Exist')
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path
+    const avatarLocalPath = req.files?.avatar?.[0]?.path
 
     let coverImageLocalPath;
     if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-      coverImageLocalPath = req.files?.coverImage[0]?.path
+      coverImageLocalPath = req.files.coverImage[0]?.path
     }
     
 
@@ -71,7 +72,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const avatar= await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if(!avatar) {
+    if(!avatar || !avatar.url) {
         throw new ApiError(400, "Avatar file is required")
     }
 
@@ -105,7 +106,8 @@ const loginUser = asyncHandler(async (req, res) => {
     //send response
 
     const {email, username, password} = req.body
-    if(!username && !email){
+    
+    if ((!username || !email)){
         throw new ApiError(400, "Username or email is required")
     }
 
@@ -124,7 +126,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
-    console.log(loggedInUser)
+   
 
     const options = {
         httpOnly: true,
