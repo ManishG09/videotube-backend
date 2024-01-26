@@ -30,7 +30,6 @@ router.route("/publish").post(verifyJWT,
 router.route("/c/:videoId").get(verifyJWT, getVideoById)
 router.route("/delete/:videoId").delete(verifyJWT,deleteVideo)
 router.route("/update/:videoId").patch(verifyJWT, upload.single("thumbnail"), updateVideo);
-
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 
 export default router

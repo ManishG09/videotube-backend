@@ -1,6 +1,5 @@
 
 import {Video} from "../models/video.model.js"
-import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -10,6 +9,43 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
+   
+    try {
+        // Creating a base query to get videos
+        let baseQuery = await Video.find()
+    
+        // Checking if there is a specific search query with title
+        if(query){
+            baseQuery = baseQuery.where({title:{$regex: new RegExp(query, 'i')}})
+        }
+    
+        // Checking if there is a specific way to sort the videos
+        if(sortBy){
+            // Deciding whether to sort in ascending or descending order
+            const sortOrder = sortType === 'desc' ? -1 :1
+            // Applying sorting based on a specific field (like date or title)
+            baseQuery = baseQuery.sort({ [sortBy]: sortOrder });
+        }
+        // Checking if userId is provided, filter videos based on userId
+        if (userId) {
+            baseQuery = baseQuery.where({ userId: userId });
+          }
+        
+         // Applying pagination to get a specific "page" of videos with a certain "limit" per page
+        const skip = (page -1) * limit
+        baseQuery = baseQuery.skip(skip).limit(limit)
+        // Executing the query to get the videos from the database
+        const videos = await baseQuery.exec()
+    
+    
+        res.status(200).json(new ApiResponse(200, videos, "Success"))
+    } catch (error) {
+        throw new ApiError(404, error, "something went wrong")
+    }
+
+
+
+
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -110,6 +146,19 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(404,"Video not found")
+    }
+
+    video.isPublished = !video.isPublished
+
+    await video.save()
+
+    res.status(200).json(new ApiResponse(200, video,"Publish status toggled successfully"))
+
 })
 
 export {
